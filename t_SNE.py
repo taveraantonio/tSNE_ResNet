@@ -18,8 +18,8 @@ RS = 123
 # global parameter
 #SCENARIO_PATH = '/media/tavera/vandal-hd1/Scenarios/'
 #SCENARIOS = os.listdir(SCENARIO_PATH) #uncomment this if you want to analyze all the scenarios in the scenario path folder
-SCENARIOS = [ "T01-CS-A", "T01-CS-J", "T01-HRN-A", "T07-HRN-A"]  #1 or more than 1 scenarios
-#SCENARIOS = ["IDDA", "Cityscapes", "BDD100K", "Mapillary"]
+#SCENARIOS = [ "T01-CS-A", "T01-CS-J", "T01-HRN-A", "T07-HRN-A", "T01_HRN_J"]  #1 or more than 1 scenarios
+SCENARIOS = ["IDDA_Best", "IDDA_Worst", "Cityscapes", "BDD100K", "Mapillary", "A2D2"]
 #SCENARIOS_PATH = []
 
 
@@ -41,13 +41,14 @@ USE_PCA = True #true for using first pca to extract relevant feature and than ts
 NCOMPONENTS = 50
 USE_CUDA = False
 FIGSIZEX = 40
-FIGSIZEY = 40
+FIGSIZEY = 20 #40
 RS = 123
 FONTSIZE = 70
 
 # save parameter
-SAVE_NAME = "4Scenarios_image"
-FILE = "./result/4Scenarios.txt"
+SAVE_NAME = "6_Dataset"
+#SAVE_NAME = "6_Scenarios"
+FILE = "./result/6Dataset_tsne_images.txt"
 
 
 if USE_CUDA:
@@ -197,6 +198,8 @@ def load_dataset_precomputed():
         images.append(cv2.imread(os.path.join(PRECOMPUTED_PATH, image), cv2.IMREAD_UNCHANGED).reshape(-1))
         r1 = re.findall(r"^[^\d]*(\d+)", image)[0]
         labels[i] = r1
+        #if i == 200:
+        #    break
 
     
     print(images.shape)
@@ -241,6 +244,8 @@ def tsne_feature(X_features, y_label, use_cuda=True, save_fig=SAVE_NAME):
     print("Feature Shape: " + str(X_features.shape))
     print("Label len: " + str(len(y_label)))
 
+    # reshape feature and label
+    # reshaped_feature = np.asarray(reshaped_feature, dtype=np.uint8)
     y_label = np.asarray(y_label, dtype=np.uint8)
     if USE_PCA: 
         pca = PCA(n_components=NCOMPONENTS)
@@ -254,6 +259,11 @@ def tsne_feature(X_features, y_label, use_cuda=True, save_fig=SAVE_NAME):
         domain_shift_tsne = TSNE(random_state=RS).fit_transform(X_features)
 
     fashion_scatter(domain_shift_tsne, y_label)
+    #fashion_scatter_3D(domain_shift_tsne, y_label)
+    #angle = 3
+    #ani = animation.FuncAnimation(f, rotate, frames=np.arange(0, 360, angle), interval=50)
+    #ani.save('inhadr_tsne1.gif', writer=animation.PillowWriter(fps=20))
+
     plt.savefig('./images/' + save_fig + '.png', dpi=120)
     return
 

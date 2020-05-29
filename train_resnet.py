@@ -9,20 +9,21 @@ from loader import loader_helper
 from logger import TensorboardXLogger
 import os
 
-num_epochs = 50
+num_epochs = 100
 batch_size = 16
 save_every_iter = 1000
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 save_dir = 'snapshots'
 MODEL_NAME = 'current.pth'
 MODEL_LOG_NAME = 'current_log.txt'
-resume = False
-merge_idda_classes = False
-N_CLASSES = 105 if not merge_idda_classes else 4
-experiment_name = str(N_CLASSES)+'_classes'
+resume =  False
+pretrained = False
+merge_idda_classes = True
+N_CLASSES = 105 if not merge_idda_classes else 6
+experiment_name = str(N_CLASSES)+'_classes'+'_1000_train_16'
 
-
-model_path = os.path.join(save_dir, experiment_name, MODEL_NAME)
+model_path = os.path.join('model', 'resnet101-5d3b4d8f.pth')
+#model_path = os.path.join(save_dir, experiment_name, MODEL_NAME)
 if resume and os.path.isfile(model_path):
     model = torch.load(model_path)
     model.eval()
@@ -32,15 +33,18 @@ if resume and os.path.isfile(model_path):
         starting_epoch = int(words[5])
     print("Resuming model at epoch %d and iter %d, with %d classes" % (starting_epoch, starting_iter, N_CLASSES))
 else:
-    model = resnet101(pretrained=True, num_classes=N_CLASSES)
+    model = resnet101(pretrained=pretrained, num_classes=N_CLASSES)
+    model = nn.DataParallel(model)
     starting_iter = 0
     starting_epoch = 0
-    print("Training ResNet-101 from scratch with %d classes" % N_CLASSES)
+    print("Training ResNet-101 from scratch with %d classes (initialized with pretrained weights)" % N_CLASSES)
 model.cuda()
 # Cross entropy loss takes the logits directly, so we don't need to apply softmax in our CNN
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.1, weight_decay=0.0001, momentum=0.9)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=6)
+
+#todo: inserire salvataggi periodici durante allenamento, salvataggio log di accuracy e loss
 
 
 train_loader, val_loader = loader_helper.get_loaders(batch_size=batch_size, merge_idda_classes=merge_idda_classes)
@@ -87,7 +91,7 @@ for epoch in range(starting_epoch, num_epochs):
             # forward
             # track history if only in train
             with torch.set_grad_enabled(phase == 'train'):
-                features, output = model(image)
+                _, _, output = model(image)
                 loss = criterion(output, label)
 
                 _, preds = torch.max(output, 1)

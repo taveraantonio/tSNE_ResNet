@@ -12,7 +12,7 @@ import distances as dist
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 from t_SNE import tsne_feature
-from model.resnet import resnet101
+from model.resnet import resnet50, resnet101
 from scipy.spatial.distance import cosine, euclidean
 
 n_samples = 500
@@ -21,18 +21,22 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 save_dir = 'snapshots'
 MODEL_NAME = 'current.pth'
 MODEL_LOG_NAME = 'current_log.txt'
-merge_idda_classes = False
-N_CLASSES = 4 #if not merge_idda_classes else 4
+merge_idda_classes = True 
+N_CLASSES = 6 
 experiment_name = str(N_CLASSES)+'_classes'
-FEATURES_FILENAME = ''#'./snapshots/105_classes/features_tensor_500.npy'
-classes_names = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A"]
-#classes_names = ["IDDA", "Cityscapes", "BDD100K", "Mapillary"]
-if not os.path.isfile(FEATURES_FILENAME):
+FEATURES_FILENAME = '' #'./snapshots/5_classes/features_tensor_500.npy' 
+FEATURES_FILENAME_SAVE = './snapshots/5_classes/features_tensor_500.npy'
+#classes_names = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A", "T01_HRN_J"]
+classes_names = ["IDDA_Best","IDDA_Worst", "Cityscapes", "BDD100K", "Mapillary", "A2D2"]
 
-    model_path = os.path.join('model', 'resnet101-5d3b4d8f.pth')
-    if not os.path.isfile(model_path):
-        model = resnet101(True)
-        #model = torch.load(model_path)
+if not os.path.isfile(FEATURES_FILENAME):
+    # model_path = os.path.join('./snapshots','6_classes_1000_train','current.pth')
+    model_path = os.path.join('./model', 'resnet101-5d3b4d8f.pth')
+    if os.path.isfile(model_path):
+        model = resnet101(pretrained=True)
+       	#model.load_state_dict(torch.load(model_path))
+        model = torch.load(model_path)
+	#model.load_state_dict(torch.load(model_path))
         model.eval()
         print("Resuming ResNet model with %d classes" % (N_CLASSES))
     else:
@@ -41,9 +45,10 @@ if not os.path.isfile(FEATURES_FILENAME):
     model.cuda()
 
 
-    _, loader = loader_helper.get_loaders(n_samples=n_samples, batch_size=batch_size, merge_idda_classes=merge_idda_classes, get_only_val=True)
+    _, loader= loader_helper.get_loaders(n_samples=n_samples, batch_size=batch_size, merge_idda_classes=merge_idda_classes, get_only_val=True)
 
     features = np.zeros((N_CLASSES, n_samples, 512*4))
+    print(features.shape)
     count = np.zeros(N_CLASSES, dtype=np.int)
     for iter, input in enumerate(loader):
         image = Variable(input[0]).cuda()
@@ -58,19 +63,18 @@ if not os.path.isfile(FEATURES_FILENAME):
             print("iter = {:6d} / {:d}".format(iter+1, len(loader.dataset)))
 
     # save features
-    np.save(FEATURES_FILENAME, features)
+    np.save(FEATURES_FILENAME_SAVE, features)
 else:
     print("Resuming features")
     features = np.load(FEATURES_FILENAME)
     print("Features Resumed")
 
-# features per t-SNE
+
 reshaped_feature = features.reshape((features.shape[0]*features.shape[1], features.shape[2]))
 y =[l // features.shape[1] for l in range(reshaped_feature.shape[0])]
 tsne_feature(reshaped_feature, y, False)
 
-
-# calcolo distanza tra la media delle varie features
+# compute mean feature vector
 mean_features = [np.mean(f, axis=0) for f in features]
 
 # calculate PCA
@@ -78,9 +82,8 @@ pca = PCA(n_components=50)
 features = pca.fit_transform(features.reshape(features.shape[0]*features.shape[1], -1))
 features = features.reshape((N_CLASSES, features.shape[0]//N_CLASSES, -1))
 
-distance_between_centroids = True
+distance_between_centroids = True #False
 if distance_between_centroids:
-    # calcolo distanza tra la media delle varie features
     mean_features = np.array([np.mean(f, axis=0) for f in features])
 
     if os.path.isfile('battha_dist.npy'):
@@ -106,7 +109,8 @@ if distance_between_centroids:
                          experiment_name, 'hellinger_weighted', save_dir)
         dist.save_to_csv(np.average(hellinger_distances, axis=2), classes_names,
                          experiment_name, 'hellinger', save_dir)
-
+        #print(np.mean(bhatta_distances, axis=2))
+        
     # ---- EUCLIDEAN DISTANCE AMONG CENTROIDS
     w_euclidean, euclidean_distances, w_cosine, cosine_distances = np.zeros((N_CLASSES, N_CLASSES)), np.zeros((N_CLASSES, N_CLASSES)), np.zeros((N_CLASSES, N_CLASSES)), np.zeros((N_CLASSES, N_CLASSES))
     for i in range(N_CLASSES):
@@ -152,4 +156,5 @@ dist.save_to_csv(euclidean_distances, classes_names, experiment_name, 'euclidean
 dist.save_to_csv(w_euclidean, classes_names, experiment_name, 'euclidean_weighted', save_dir)
 dist.save_to_csv(cosine_distances, classes_names, experiment_name, 'cosine', save_dir)
 dist.save_to_csv(w_cosine, classes_names, experiment_name, 'cosine_weighted', save_dir)
+
 print('CSV files saved to %s' % os.path.join(save_dir, experiment_name))
