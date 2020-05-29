@@ -1,7 +1,7 @@
 # Compute distance among domains 
+## Extract features with ResNet-101 and plot domains with t-SNE
 
-
-### Extract features with ResNet-101 and plot domains with t-SNE:
+### How to
 > python get_features_resnet.py
 
 ### Model
