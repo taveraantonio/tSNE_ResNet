@@ -9,34 +9,29 @@ import torchvision
 from torch.utils import data
 from PIL import Image, ImageFile
 from .augmentations import *
+import json
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-CITYSCAPES_DEFAULT_LABEL = 105
+MAPILLARY_DEFAULT_LABEL = 107
 
-class CityLoader(data.Dataset):
-	def __init__(self, root, img_list_path, max_samples=1000, transform=None, set='train', label=CITYSCAPES_DEFAULT_LABEL):
+class MapillaryLoader(data.Dataset):
+	def __init__(self, root, img_list_path, max_samples=1000, transform=None, set='train', label=MAPILLARY_DEFAULT_LABEL):
 		self.root = root
 		self.label = label
 		self.transform = transform
-		# self.mean_bgr = np.array([104.00698793, 116.66876762, 122.67891434])
-		self.img_ids = [i_id.strip() for i, i_id in enumerate(open(os.path.join(img_list_path, set+'.txt'))) if i<max_samples]
+		self.img_ids = [i_id.strip().split('/')[-1] for i, i_id in enumerate(open(os.path.join(img_list_path, set+'.txt'))) if i<max_samples]
 
 		self.files = []
 		self.set = set
-		added = 0
 		# for split in ["train", "trainval", "val"]:
 		for img_name in self.img_ids:
-			if added ==0: #< max_samples/2:
-				img_file = osp.join(self.root, "leftImg8bit/%s/%s" % (self.set, img_name))
-			else:
-				img_name = img_name.replace("_leftImg8bit.png", "_gtFine_color.png")
-				img_file = osp.join(self.root, "gtFine/%s/%s" % (self.set, img_name))
+			set = self.set+'ing' if 'val' not in self.set else 'validation'
+			img_file = osp.join(self.root, "%s/images/%s" % (set, img_name))
 			self.files.append({
 				"img": img_file,
-				#"label": CITYSCAPES_LABEL,
+				#"label": MAPILLARY_LABEL,
 				"name": img_name
 			})
-			added += 1
 
 	def __len__(self):
 		return len(self.files)
@@ -45,10 +40,6 @@ class CityLoader(data.Dataset):
 		datafiles = self.files[index]
 
 		image = Image.open(datafiles["img"]).convert('RGB')
-		new_width = 1080 #720
-		new_height = 1920 #1280
-		image = image.resize((new_width, new_height), Image.ANTIALIAS) 
-
 		#label = datafiles["label"]
 		name = datafiles["name"]
 

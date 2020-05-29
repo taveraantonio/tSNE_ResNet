@@ -11,29 +11,27 @@ from PIL import Image, ImageFile
 from .augmentations import *
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-CITYSCAPES_DEFAULT_LABEL = 105
+BDD_DEFAULT_LABEL = 108
 
-class CityLoader(data.Dataset):
-	def __init__(self, root, img_list_path, max_samples=1000, transform=None, set='train', label=CITYSCAPES_DEFAULT_LABEL):
+class AudiLoader(data.Dataset):
+	def __init__(self, root, img_list_path, max_samples=1000, transform=None, set='train', label=BDD_DEFAULT_LABEL):
 		self.root = root
 		self.label = label
 		self.transform = transform
 		# self.mean_bgr = np.array([104.00698793, 116.66876762, 122.67891434])
-		self.img_ids = [i_id.strip() for i, i_id in enumerate(open(os.path.join(img_list_path, set+'.txt'))) if i<max_samples]
-
+		self.img_ids = [i_id.strip().split('/')[-1] for i, i_id in enumerate(open(os.path.join(img_list_path, set+'.txt'))) if i<max_samples]
 		self.files = []
 		self.set = set
-		added = 0
 		# for split in ["train", "trainval", "val"]:
+		added = 0 
 		for img_name in self.img_ids:
-			if added ==0: #< max_samples/2:
-				img_file = osp.join(self.root, "leftImg8bit/%s/%s" % (self.set, img_name))
-			else:
-				img_name = img_name.replace("_leftImg8bit.png", "_gtFine_color.png")
-				img_file = osp.join(self.root, "gtFine/%s/%s" % (self.set, img_name))
+			if added == 0: # < max_samples/2:
+				img_file = osp.join(self.root, "rgb/%s" % (img_name))
+			else: 
+				img_file = osp.join(self.root, "label_colored/%s" % (img_name))
 			self.files.append({
 				"img": img_file,
-				#"label": CITYSCAPES_LABEL,
+				"label": self.label, #BDD_LABEL,
 				"name": img_name
 			})
 			added += 1

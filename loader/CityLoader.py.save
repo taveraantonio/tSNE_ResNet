@@ -26,7 +26,7 @@ class CityLoader(data.Dataset):
 		added = 0
 		# for split in ["train", "trainval", "val"]:
 		for img_name in self.img_ids:
-			if added ==0: #< max_samples/2:
+			if added < max_samples/2:
 				img_file = osp.join(self.root, "leftImg8bit/%s/%s" % (self.set, img_name))
 			else:
 				img_name = img_name.replace("_leftImg8bit.png", "_gtFine_color.png")
@@ -45,10 +45,6 @@ class CityLoader(data.Dataset):
 		datafiles = self.files[index]
 
 		image = Image.open(datafiles["img"]).convert('RGB')
-		new_width = 1080 #720
-		new_height = 1920 #1280
-		image = image.resize((new_width, new_height), Image.ANTIALIAS) 
-
 		#label = datafiles["label"]
 		name = datafiles["name"]
 

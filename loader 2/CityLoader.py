@@ -23,20 +23,14 @@ class CityLoader(data.Dataset):
 
 		self.files = []
 		self.set = set
-		added = 0
 		# for split in ["train", "trainval", "val"]:
 		for img_name in self.img_ids:
-			if added ==0: #< max_samples/2:
-				img_file = osp.join(self.root, "leftImg8bit/%s/%s" % (self.set, img_name))
-			else:
-				img_name = img_name.replace("_leftImg8bit.png", "_gtFine_color.png")
-				img_file = osp.join(self.root, "gtFine/%s/%s" % (self.set, img_name))
+			img_file = osp.join(self.root, "leftImg8bit/%s/%s" % (self.set, img_name))
 			self.files.append({
 				"img": img_file,
 				#"label": CITYSCAPES_LABEL,
 				"name": img_name
 			})
-			added += 1
 
 	def __len__(self):
 		return len(self.files)
@@ -45,10 +39,6 @@ class CityLoader(data.Dataset):
 		datafiles = self.files[index]
 
 		image = Image.open(datafiles["img"]).convert('RGB')
-		new_width = 1080 #720
-		new_height = 1920 #1280
-		image = image.resize((new_width, new_height), Image.ANTIALIAS) 
-
 		#label = datafiles["label"]
 		name = datafiles["name"]
 

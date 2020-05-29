@@ -19,15 +19,14 @@ class IDDALoader(data.Dataset):
 		self.root = "/media/tavera/vandal-hd1/IDDA"
 		self.merged_label = IDDA_DEFAULT_LABEL
 		self.transform = transform
-		self.label_dict = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A", "T01_HRN_J"]
-		self.labels = [0,1,2,3,4] # {scenario : n label}
+		self.label_dict = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A"]
+		self.labels = [0,1,2,3]# {scenario : n label}
 		self.splitting_dirs = ["/media/tavera/vandal-hd1/Scenarios/T01_CS_A/train.txt", "/media/tavera/vandal-hd1/Scenarios/T01_CS_J/train.txt",
-							"/media/tavera/vandal-hd1/Scenarios/T01_HRN_A/train.txt", "/media/tavera/vandal-hd1/Scenarios/T07_HRN_A/train.txt", 
-                                                        "/media/tavera/vandal-hd1/Scenarios/T01_HRN_J/train.txt"]
+							"/media/tavera/vandal-hd1/Scenarios/T01_HRN_A/train.txt", "/media/tavera/vandal-hd1/Scenarios/T07_HRN_A/train.txt"]
 		self.img_ids = []
 		self.files = []
 		self.set = set
-		self.max_images = max_samples
+		self.max_images = 500
 
 		for scenario in self.splitting_dirs:
 			for idx, image_id in enumerate(open(scenario)):
@@ -48,7 +47,7 @@ class IDDALoader(data.Dataset):
 				"label": self.get_label_from_image(name),
 				"name": name
 			})
-		# print(self.files)
+		#print(self.files)
 
 	def get_label_from_image(self, image_id):
 		for i, scenario in enumerate(self.label_dict):
@@ -63,9 +62,6 @@ class IDDALoader(data.Dataset):
 		#print(datafiles["img"])
 		try:
 			image = Image.open(datafiles["img"]).convert('RGB')
-			new_width = 1080
-			new_height = 1920
-			image = image.resize((new_width, new_height), Image.ANTIALIAS) 
 		except:
 			print("Error")
 		label = datafiles["label"]

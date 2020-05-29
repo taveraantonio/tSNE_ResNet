@@ -23,21 +23,34 @@ class BDDLoader(data.Dataset):
 		self.files = []
 		self.set = set
 		# for split in ["train", "trainval", "val"]:
+		added = 0
 		for img_name in self.img_ids:
-			img_file = osp.join(self.root, "%s/raw_images/%s" % (self.set, img_name))
+			if added == 0: # < max_samples/2:
+				img_file = osp.join(self.root, "%s/raw_images/%s" % (self.set, img_name))
+			else:
+				img_name = img_name.replace(".jpg", ".png")
+				img_file = osp.join(self.root, "%s/class_color/%s" % (self.set, img_name))
 			self.files.append({
 				"img": img_file,
-				#"label": BDD_LABEL,
+				"label": self.label, #BDD_LABEL,
 				"name": img_name
 			})
+			added += 1
 
 	def __len__(self):
 		return len(self.files)
 
 	def __getitem__(self, index):
 		datafiles = self.files[index]
-
-		image = Image.open(datafiles["img"]).convert('RGB')
+		try:
+			image = Image.open(datafiles["img"]).convert('RGB')
+			new_width = 1080
+			new_height = 1920
+			image = image.resize((new_width, new_height), Image.ANTIALIAS) 
+		except:
+			print("Not found: " + str(datafiles["img"]))
+			datafiles["img"].replace("class_color", "raw_images")
+			image = Image.open(datafiles["img"]).convert('RGB')
 		#label = datafiles["label"]
 		name = datafiles["name"]
 

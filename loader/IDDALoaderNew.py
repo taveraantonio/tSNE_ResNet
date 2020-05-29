@@ -14,40 +14,39 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 IDDA_DEFAULT_LABEL = 0
 
-class IDDALoader(data.Dataset):
-	def __init__(self, root, splitting_dir, max_samples=1000, transform=None, set='train', merge_classes=False):
-		self.root = "/media/tavera/vandal-hd1/IDDA"
-		self.merged_label = IDDA_DEFAULT_LABEL
+class IDDALoaderNew(data.Dataset):
+	def __init__(self, root, splitting_dir, label=1, max_samples=1000, transform=None, set='train', merge_classes=False):
+		self.root = root  #"/media/tavera/vandal-hd1/IDDA"
+		self.label = label
 		self.transform = transform
-		self.label_dict = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A", "T01_HRN_J"]
-		self.labels = [0,1,2,3,4] # {scenario : n label}
-		self.splitting_dirs = ["/media/tavera/vandal-hd1/Scenarios/T01_CS_A/train.txt", "/media/tavera/vandal-hd1/Scenarios/T01_CS_J/train.txt",
-							"/media/tavera/vandal-hd1/Scenarios/T01_HRN_A/train.txt", "/media/tavera/vandal-hd1/Scenarios/T07_HRN_A/train.txt", 
-                                                        "/media/tavera/vandal-hd1/Scenarios/T01_HRN_J/train.txt"]
-		self.img_ids = []
+		self.splitting_dirs = splitting_dir
 		self.files = []
+		self.img_ids =[]
 		self.set = set
-		self.max_images = max_samples
+		self.max_images = max_samples #500
 
-		for scenario in self.splitting_dirs:
-			for idx, image_id in enumerate(open(scenario)):
-				self.img_ids += [image_id.strip()]
-				if idx == self.max_images - 1:
-					break
+		for idx, image_id in enumerate(open(self.splitting_dirs)):
+			self.img_ids += [image_id.strip()]
+			if idx == self.max_images - 1:
+				break
 
 		print("LEN IMAGES: ")
 		print(len(self.img_ids))
 		#print(self.img_ids)
 
-
+		added = 0
 		# for split in ["train", "trainval", "val"]:
 		for name in self.img_ids:
-			img_file = osp.join(self.root, "RGB", name)
+			if added==0: # < max_samples/2:
+				img_file = osp.join(self.root, "RGB", name)
+			else:
+				img_file = osp.join(self.root, "SemanticRGB", name)
 			self.files.append({
 				"img": img_file,
-				"label": self.get_label_from_image(name),
+				"label": self.label,
 				"name": name
 			})
+			added += 1
 		# print(self.files)
 
 	def get_label_from_image(self, image_id):
@@ -63,9 +62,10 @@ class IDDALoader(data.Dataset):
 		#print(datafiles["img"])
 		try:
 			image = Image.open(datafiles["img"]).convert('RGB')
-			new_width = 1080
-			new_height = 1920
+			new_width = 1080 #720
+			new_height = 1920 #1280
 			image = image.resize((new_width, new_height), Image.ANTIALIAS) 
+#			print(image.size)
 		except:
 			print("Error")
 		label = datafiles["label"]
@@ -73,7 +73,7 @@ class IDDALoader(data.Dataset):
 		if self.transform is not None:
 			#print("transforming")
 			image_new = self.transform(image)
-		#print(label)
+#		print(image.size)
 		return image_new, label, name
 
 if __name__ == '__main__':
