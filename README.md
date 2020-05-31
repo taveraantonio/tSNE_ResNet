@@ -6,4 +6,4 @@
 
 ### Model
 Download pretrained model on ImageNet [here](https://mega.nz/file/cU1B2TCL#uTUzsfHT746YRPxGclflGnkr73fzgUNzm-51De5yJko)
-
+Copy it inside the "model" folder
