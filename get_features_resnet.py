@@ -29,6 +29,12 @@ FEATURES_FILENAME_SAVE = './snapshots/5_classes/features_tensor_500.npy'
 #classes_names = ["T01_CS_A", "T01_CS_J", "T01_HRN_A", "T07_HRN_A", "T01_HRN_J"]
 classes_names = ["IDDA_Best","IDDA_Worst", "Cityscapes", "BDD100K", "Mapillary", "A2D2"]
 
+try: 
+    os.makedirs(os.path.join("./snapshots", experiment_name), exist_ok = True) 
+    print("Directory '%s' created successfully" %directory) 
+except OSError as error: 
+    print("Directory '%s' can not be created. Already exist") 
+
 if not os.path.isfile(FEATURES_FILENAME):
     # model_path = os.path.join('./snapshots','6_classes_1000_train','current.pth')
     model_path = os.path.join('./model', 'resnet101-5d3b4d8f.pth')
